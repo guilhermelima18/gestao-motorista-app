@@ -1,0 +1,87 @@
+{
+  "name": "gestao-motorista",
+  "version": "1.0.0",
+  "description": "Gestão financeira para motoristas de aplicativo (offline)",
+  "main": "dist/main/main.cjs",
+  "scripts": {
+    "dev": "node scripts/build-electron.mjs && concurrently -k \"vite\" \"wait-on tcp:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .\"",
+    "build:electron": "node scripts/build-electron.mjs",
+    "build": "tsc --noEmit -p tsconfig.json && node scripts/build-electron.mjs --prod && vite build",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "start": "electron .",
+    "dist": "npm run build && electron-builder --win --publish never"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "UNLICENSED",
+  "type": "module",
+  "dependencies": {
+    "better-sqlite3": "^13.0.3"
+  },
+  "devDependencies": {
+    "@hookform/resolvers": "^5.9.2",
+    "@radix-ui/react-dialog": "^1.3.1",
+    "@radix-ui/react-label": "^2.1.17",
+    "@radix-ui/react-slot": "^1.5.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "concurrently": "^10.0.6",
+    "cross-env": "^10.1.0",
+    "date-fns": "^4.4.0",
+    "electron": "^44.9.1",
+    "electron-builder": "^26.15.3",
+    "esbuild": "^0.28.2",
+    "lucide-react": "^1.60.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-hook-form": "^7.90.0",
+    "recharts": "^3.10.1",
+    "tailwind-merge": "^3.7.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5",
+    "wait-on": "^9.5.1",
+    "zod": "^3.25.76"
+  },
+  "productName": "Gestão do Motorista",
+  "private": true,
+  "build": {
+    "appId": "br.com.gestaomotorista.app",
+    "productName": "Gestão do Motorista",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "node_modules/better-sqlite3/**"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false
+    },
+    "npmRebuild": false,
+    "artifactName": "GestaoMotorista-Setup-${version}.${ext}"
+  }
+}

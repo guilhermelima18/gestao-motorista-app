@@ -1,0 +1,71 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-primary: var(--primary);
+  --color-primary-fg: var(--primary-fg);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
+}
+
+:root {
+  color-scheme: light;
+  --bg: #f4f4f2;
+  --surface: #fcfcfb;
+  --surface-2: #efeeea;
+  --border: #dcdbd5;
+  --fg: #0b0b0b;
+  --muted: #52514e;
+  --primary: #2a78d6;
+  --primary-fg: #ffffff;
+  --danger: #b42318;
+  --success: #067647;
+  --warning: #93370d;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+}
+
+.dark {
+  color-scheme: dark;
+  --bg: #111110;
+  --surface: #1a1a19;
+  --surface-2: #242423;
+  --border: #3a3a38;
+  --fg: #f0efec;
+  --muted: #c3c2b7;
+  --primary: #3987e5;
+  --primary-fg: #0b0b0b;
+  --danger: #f97066;
+  --success: #47cd89;
+  --warning: #fdb022;
+  --series-1: #3987e5;
+  --series-2: #d95926;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
