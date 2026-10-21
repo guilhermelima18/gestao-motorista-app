@@ -6,7 +6,7 @@ Lista de melhorias identificadas depois do MVP, em ordem sugerida de prioridade.
 
 - [ ] **Corrigir os dados de teste no banco real:** duas viagens e a jornada estão datadas em 21/10/2026 e uma despesa de R$ 150,00 em 09/11/2026 (datas futuras digitadas por engano). O aviso de data futura já existe nos formulários; falta editar os registros.
 - [ ] **Instalar e testar o `.exe` gerado** (`release/GestaoMotorista-Setup-1.0.0.exe`) numa máquina limpa, incluindo atualização sobre uma versão anterior para confirmar que o banco é preservado.
-- [ ] **Ícone próprio** do aplicativo e do instalador (hoje usa o ícone padrão do Electron).
+- [x] **Ícone próprio** do aplicativo e do instalador: fonte em `build/icon.svg`; `npm run icons` regenera `build/icon.png` e `build/icon.ico`. Falta conferir no `.exe` instalado.
 - [ ] **Assinatura de código** do instalador, para evitar o aviso do SmartScreen.
 
 ## 2. Qualidade e confiança

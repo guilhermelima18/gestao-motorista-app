@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="fundo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3987e5"/>
+      <stop offset="1" stop-color="#1b56a4"/>
+    </linearGradient>
+  </defs>
+  <rect x="32" y="32" width="960" height="960" rx="220" fill="url(#fundo)"/>
+  <!-- volante -->
+  <circle cx="512" cy="512" r="330" fill="none" stroke="#ffffff" stroke-width="76"/>
+  <circle cx="512" cy="512" r="82" fill="#ffffff"/>
+  <path d="M512 512 L512 842 M512 512 L226 678 M512 512 L798 678" stroke="#ffffff" stroke-width="76" stroke-linecap="round" fill="none"/>
+  <!-- carro -->
+  <g transform="translate(0 -24)">
+    <path d="M382 400 L382 366 Q382 350 400 346 L440 338 L470 306 Q478 298 490 298 L540 298 Q552 298 560 306 L588 338 L626 346 Q642 350 642 366 L642 400 Z" fill="#ffffff"/>
+    <path d="M478 332 L497 313 L508 313 L508 332 Z M528 313 L539 313 L558 332 L528 332 Z" fill="#2a6bc0"/>
+    <circle cx="430" cy="404" r="32" fill="#ffffff" stroke="#2a6bc0" stroke-width="14"/>
+    <circle cx="594" cy="404" r="32" fill="#ffffff" stroke="#2a6bc0" stroke-width="14"/>
+  </g>
+</svg>

@@ -24,11 +24,13 @@ function isTrustedUrl(url: string): boolean {
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 820,
+    width: 1366,
+    height: 900,
     minWidth: 900,
     minHeight: 600,
     title: 'Gestão do Motorista',
+    // Empacotado, o ícone vem do executável; em desenvolvimento usa o PNG da pasta build.
+    icon: app.isPackaged ? undefined : path.join(__dirname, '../../build/icon.png'),
     show: false,
     webPreferences: {
       preload: path.join(__dirname, '../preload/preload.cjs'),
