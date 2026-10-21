@@ -8,7 +8,7 @@ import { createGoal, listGoalProgress } from '../../src/main/services/goals'
 import { listPlatforms, createPlatform, deletePlatform } from '../../src/main/services/platforms'
 import { createRefueling, listRefuelings } from '../../src/main/services/refuelings'
 import { generateReport } from '../../src/main/services/reports'
-import { deleteShift, endShift, getOpenShift, startShift } from '../../src/main/services/shifts'
+import { deleteShift, endShift, getOpenShift, startShift, updateShift } from '../../src/main/services/shifts'
 import { createTrip, deleteTrip, listTrips, updateTrip } from '../../src/main/services/trips'
 import { createVehicle, deleteVehicle, getVehicle } from '../../src/main/services/vehicles'
 import { exportToCsv } from '../../src/main/services/csv'
@@ -26,6 +26,39 @@ function setup() {
   const uber = listPlatforms(db).find((p) => p.name === 'Uber')!
   return { vehicle, uber }
 }
+
+describe('edição de jornada', () => {
+  it('corrige datas e quilometragens de uma jornada encerrada', () => {
+    const { vehicle } = setup()
+    const shift = startShift(db, { vehicleId: vehicle.id, startOdometer: 1000, startedAt: at(8) })
+    endShift(db, { id: shift.id, endOdometer: 1100, endedAt: at(16) })
+    const edited = updateShift(db, { id: shift.id, startedAt: at(7), endedAt: at(17), startOdometer: 990, endOdometer: 1120, notes: 'ajustada' })
+    expect(edited.startedAt).toBe(at(7))
+    expect(edited.distanceKm).toBe(130)
+    expect(edited.notes).toBe('ajustada')
+    expect(getVehicle(db, vehicle.id).currentOdometer).toBe(1120)
+  })
+
+  it('jornada em andamento não aceita término', () => {
+    const { vehicle } = setup()
+    const shift = startShift(db, { vehicleId: vehicle.id, startOdometer: 1000, startedAt: at(8) })
+    expect(() => updateShift(db, { id: shift.id, startedAt: at(8), endedAt: at(10), startOdometer: 1000, endOdometer: 1010 })).toThrow(/em andamento/)
+    expect(updateShift(db, { id: shift.id, startedAt: at(9), startOdometer: 1005 }).startOdometer).toBe(1005)
+  })
+
+  it('rejeita período que deixa corridas de fora ou sobrepõe outra jornada', () => {
+    const { vehicle, uber } = setup()
+    const first = startShift(db, { vehicleId: vehicle.id, startOdometer: 1000, startedAt: at(8) })
+    createTrip(db, { shiftId: first.id, platformId: uber.id, occurredAt: at(9), fareAmount: 2000, distanceKm: 5 })
+    endShift(db, { id: first.id, endOdometer: 1050, endedAt: at(12) })
+    const second = startShift(db, { vehicleId: vehicle.id, startOdometer: 1050, startedAt: at(14) })
+    endShift(db, { id: second.id, endOdometer: 1100, endedAt: at(18) })
+
+    expect(() => updateShift(db, { id: first.id, startedAt: at(10), endedAt: at(12), startOdometer: 1000, endOdometer: 1050 })).toThrow(/corridas/)
+    expect(() => updateShift(db, { id: first.id, startedAt: at(8), endedAt: at(15), startOdometer: 1000, endOdometer: 1050 })).toThrow(/sobrepõe/)
+    expect(() => updateShift(db, { id: second.id, startedAt: at(14), endedAt: at(18), startOdometer: 1050, endOdometer: 1000 })).toThrow(/inferior/)
+  })
+})
 
 describe('jornadas', () => {
   it('inicia e encerra uma jornada, atualizando o odômetro do veículo', () => {

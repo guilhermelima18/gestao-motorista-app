@@ -1,14 +1,15 @@
 import {
   endShiftSchema,
-  shiftNotesSchema,
   startShiftSchema,
+  updateShiftSchema,
   type EndShiftInput,
   type StartShiftInput,
+  type UpdateShiftInput,
 } from '@shared/schemas'
 import type { Shift } from '@shared/types'
 import { countRows, nowIso, notFound, toIso, type Db } from './common'
 import { DomainError } from './errors'
-import { validateShiftEnd, validateShiftStart } from './validation'
+import { validateShiftEdit, validateShiftEnd, validateShiftStart } from './validation'
 import { getVehicle, lastKnownOdometer, raiseVehicleOdometer } from './vehicles'
 
 const SELECT = `SELECT j.id, j.veiculo_id AS vehicleId, v.nome AS vehicleName, j.inicio_em AS startedAt,
@@ -82,10 +83,44 @@ export function endShift(db: Db, input: EndShiftInput): Shift {
   return getShift(db, data.id)
 }
 
-export function updateShiftNotes(db: Db, input: { id: number; notes?: string | null }): Shift {
-  const data = shiftNotesSchema.parse(input)
-  getShift(db, data.id)
-  db.prepare('UPDATE jornadas SET observacoes = ?, atualizado_em = ? WHERE id = ?').run(data.notes, nowIso(), data.id)
+/**
+ * Corrige datas, quilometragens e observações de uma jornada. O veículo não muda (corridas e abastecimentos
+ * dependem dele). O período não pode sobrepor outra jornada nem deixar corridas lançadas de fora.
+ */
+export function updateShift(db: Db, input: UpdateShiftInput): Shift {
+  const data = updateShiftSchema.parse(input)
+  const run = db.transaction(() => {
+    const shift = getShift(db, data.id)
+    const startedAt = toIso(data.startedAt)
+    const endedAt = data.endedAt ? toIso(data.endedAt) : null
+    const trips = db
+      .prepare('SELECT MIN(realizada_em) AS first, MAX(realizada_em) AS last FROM viagens WHERE jornada_id = ?')
+      .get(data.id) as { first: string | null; last: string | null }
+    validateShiftEdit({
+      isOpen: shift.endedAt === null,
+      startedAt,
+      endedAt,
+      startOdometer: data.startOdometer,
+      endOdometer: data.endOdometer,
+      firstTripAt: trips.first,
+      lastTripAt: trips.last,
+    })
+    const overlap = db
+      .prepare(
+        `SELECT inicio_em AS startedAt FROM jornadas
+         WHERE id <> ? AND inicio_em < COALESCE(?, '9999-12-31T00:00:00.000Z') AND (fim_em IS NULL OR fim_em > ?) LIMIT 1`,
+      )
+      .get(data.id, endedAt, startedAt) as { startedAt: string } | undefined
+    if (overlap) {
+      throw new DomainError('JORNADA_SOBREPOSTA', 'O período informado se sobrepõe a outra jornada.', 'startedAt')
+    }
+    db.prepare(
+      `UPDATE jornadas SET inicio_em = ?, fim_em = ?, quilometragem_inicial = ?, quilometragem_final = ?,
+         observacoes = ?, atualizado_em = ? WHERE id = ?`,
+    ).run(startedAt, endedAt, data.startOdometer, data.endOdometer, data.notes, nowIso(), data.id)
+    raiseVehicleOdometer(db, shift.vehicleId, data.endOdometer ?? data.startOdometer)
+  })
+  run()
   return getShift(db, data.id)
 }
 

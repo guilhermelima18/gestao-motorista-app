@@ -41,6 +41,43 @@ export function validateShiftEnd(check: ShiftEndCheck): void {
   }
 }
 
+export interface ShiftEditCheck {
+  isOpen: boolean
+  startedAt: string
+  endedAt: string | null
+  startOdometer: number
+  endOdometer: number | null
+  /** Menor e maior data de corrida já lançada na jornada; null quando não há corridas. */
+  firstTripAt: string | null
+  lastTripAt: string | null
+}
+
+/** Regras da edição de uma jornada já criada (aberta ou encerrada). */
+export function validateShiftEdit(check: ShiftEditCheck): void {
+  if (check.isOpen) {
+    if (check.endedAt !== null || check.endOdometer !== null) {
+      throw new DomainError('JORNADA_ABERTA', 'Uma jornada em andamento não tem término nem quilometragem final. Encerre-a primeiro.', 'endedAt')
+    }
+  } else {
+    if (check.endedAt === null) throw new DomainError('DATA_INVALIDA', 'Informe a data de término.', 'endedAt')
+    if (check.endOdometer === null) throw new DomainError('QUILOMETRAGEM_INVALIDA', 'Informe a quilometragem final.', 'endOdometer')
+    validateShiftEnd({
+      startedAt: check.startedAt,
+      endedAt: check.endedAt,
+      startOdometer: check.startOdometer,
+      endOdometer: check.endOdometer,
+    })
+  }
+  const start = new Date(check.startedAt).getTime()
+  const end = check.endedAt ? new Date(check.endedAt).getTime() : Number.POSITIVE_INFINITY
+  if (check.firstTripAt && new Date(check.firstTripAt).getTime() < start) {
+    throw new DomainError('DATA_INVALIDA', 'O início não pode ser posterior a corridas já lançadas nesta jornada.', 'startedAt')
+  }
+  if (check.lastTripAt && new Date(check.lastTripAt).getTime() > end) {
+    throw new DomainError('DATA_INVALIDA', 'O término não pode ser anterior a corridas já lançadas nesta jornada.', 'endedAt')
+  }
+}
+
 export interface TripCheck {
   occurredAt: string
   distanceKm: number

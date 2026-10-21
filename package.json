@@ -11,7 +11,8 @@
     "test": "vitest run",
     "start": "electron .",
     "dist": "npm run build && electron-builder --win --publish never",
-    "icons": "electron scripts/build-icons.cjs"
+    "icons": "electron scripts/build-icons.cjs",
+    "dist:assinado": "node scripts/dist-assinado.mjs"
   },
   "keywords": [],
   "author": "",

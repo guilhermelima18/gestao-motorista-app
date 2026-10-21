@@ -1,12 +1,12 @@
 import { formatCurrency, formatNumber } from '@shared/money'
 import type { Shift } from '@shared/types'
-import { Eye, Flag, Play, Route, Trash2 } from 'lucide-react'
+import { Eye, Flag, Pencil, Play, Route, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { DataTable, type Column } from '@/components/ui/data-table'
 import { Badge, Card, EmptyState, ErrorBlock, LoadingBlock, PageHeader } from '@/components/ui/display'
 import { Modal } from '@/components/ui/modal'
-import { EndShiftForm, StartShiftForm } from '@/features/shifts/ShiftForms'
+import { EditShiftForm, EndShiftForm, StartShiftForm } from '@/features/shifts/ShiftForms'
 import { ShiftDetails } from '@/features/shifts/ShiftDetails'
 import { useApiQuery } from '@/hooks/useApiQuery'
 import { useSettings, useVehicles } from '@/hooks/useLookups'
@@ -15,7 +15,7 @@ import { useShortcut } from '@/hooks/useShortcut'
 import { api } from '@/lib/api'
 import { formatDateTime, formatHours } from '@/lib/dates'
 
-type Dialog = { kind: 'start' } | { kind: 'end'; shift: Shift } | { kind: 'details'; shift: Shift } | null
+type Dialog = { kind: 'start' } | { kind: 'end'; shift: Shift } | { kind: 'edit'; shift: Shift } | { kind: 'details'; shift: Shift } | null
 
 function durationHours(shift: Shift): number | null {
   if (!shift.endedAt) return null
@@ -69,6 +69,9 @@ export function ShiftsPage() {
         <div className="flex justify-end gap-1">
           <Button variant="ghost" size="icon" aria-label="Ver detalhes da jornada" onClick={() => setDialog({ kind: 'details', shift: s })}>
             <Eye size={16} />
+          </Button>
+          <Button variant="ghost" size="icon" aria-label="Editar jornada" onClick={() => setDialog({ kind: 'edit', shift: s })}>
+            <Pencil size={16} />
           </Button>
           {!s.endedAt ? (
             <Button variant="ghost" size="icon" aria-label="Encerrar jornada" onClick={() => setDialog({ kind: 'end', shift: s })}>
@@ -127,6 +130,9 @@ export function ShiftsPage() {
       </Modal>
       <Modal open={dialog?.kind === 'end'} title="Encerrar jornada" onClose={close}>
         {dialog?.kind === 'end' ? <EndShiftForm shift={dialog.shift} onDone={done} onCancel={close} /> : null}
+      </Modal>
+      <Modal open={dialog?.kind === 'edit'} title="Editar jornada" onClose={close}>
+        {dialog?.kind === 'edit' ? <EditShiftForm shift={dialog.shift} onDone={done} onCancel={close} /> : null}
       </Modal>
       <Modal open={dialog?.kind === 'details'} title="Detalhes da jornada" onClose={close}>
         {dialog?.kind === 'details' ? <ShiftDetails shift={dialog.shift} /> : null}

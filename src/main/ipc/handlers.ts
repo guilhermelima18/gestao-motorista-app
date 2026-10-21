@@ -11,7 +11,7 @@ import { createPlatform, deletePlatform, listPlatforms, updatePlatform } from '.
 import { createRefueling, deleteRefueling, listRefuelings, updateRefueling } from '../services/refuelings'
 import { generateReport } from '../services/reports'
 import { getSettings, saveSetting } from '../services/settings'
-import { deleteShift, endShift, getShift, listShifts, startShift, updateShiftNotes } from '../services/shifts'
+import { deleteShift, endShift, getShift, listShifts, startShift, updateShift } from '../services/shifts'
 import { createTrip, deleteTrip, listTrips, updateTrip } from '../services/trips'
 import { createVehicle, deleteVehicle, listVehicles, updateVehicle } from '../services/vehicles'
 
@@ -54,7 +54,7 @@ export function createHandlers(ctx: HandlerContext): Handlers {
       get: (i) => getShift(db, idOf(i)),
       start: (i) => startShift(db, i as In<typeof startShift>),
       end: (i) => endShift(db, i as In<typeof endShift>),
-      updateNotes: (i) => updateShiftNotes(db, i as In<typeof updateShiftNotes>),
+      update: (i) => updateShift(db, i as In<typeof updateShift>),
       remove: (i) => (deleteShift(db, idOf(i)), null),
     },
     trips: {

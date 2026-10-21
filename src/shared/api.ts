@@ -11,6 +11,7 @@ import type {
   ReportInput,
   SettingInput,
   StartShiftInput,
+  UpdateShiftInput,
   TripFilter,
   TripInput,
   VehicleInput,
@@ -56,7 +57,7 @@ export interface MotoristaApi {
     get(data: Id): R<Shift>
     start(data: StartShiftInput): R<Shift>
     end(data: EndShiftInput): R<Shift>
-    updateNotes(data: Id & { notes?: string | null }): R<Shift>
+    update(data: UpdateShiftInput): R<Shift>
     remove(data: Id): R<null>
   }
   trips: {
@@ -105,7 +106,7 @@ type Groups = keyof MotoristaApi
 export const API_METHODS: { [G in Groups]: ReadonlyArray<keyof MotoristaApi[G] & string> } = {
   vehicles: ['list', 'create', 'update', 'remove'],
   platforms: ['list', 'create', 'update', 'remove'],
-  shifts: ['list', 'get', 'start', 'end', 'updateNotes', 'remove'],
+  shifts: ['list', 'get', 'start', 'end', 'update', 'remove'],
   trips: ['list', 'create', 'update', 'remove'],
   refuelings: ['list', 'create', 'update', 'remove'],
   expenses: ['list', 'create', 'update', 'remove'],

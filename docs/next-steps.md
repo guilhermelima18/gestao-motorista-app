@@ -4,10 +4,9 @@ Lista de melhorias identificadas depois do MVP, em ordem sugerida de prioridade.
 
 ## 1. Antes de usar no dia a dia
 
-- [ ] **Corrigir os dados de teste no banco real:** duas viagens e a jornada estão datadas em 21/10/2026 e uma despesa de R$ 150,00 em 09/11/2026 (datas futuras digitadas por engano). O aviso de data futura já existe nos formulários; falta editar os registros.
 - [ ] **Instalar e testar o `.exe` gerado** (`release/GestaoMotorista-Setup-1.0.0.exe`) numa máquina limpa, incluindo atualização sobre uma versão anterior para confirmar que o banco é preservado.
 - [x] **Ícone próprio** do aplicativo e do instalador: fonte em `build/icon.svg`; `npm run icons` regenera `build/icon.png` e `build/icon.ico`. Falta conferir no `.exe` instalado.
-- [ ] **Assinatura de código** do instalador, para evitar o aviso do SmartScreen.
+- [x] **Assinatura de código (autoassinada, uso próprio):** `scripts/criar-certificado.ps1` gera o certificado em `certs/` (ignorado pelo git) e `npm run dist:assinado` assina o instalador. O SmartScreen continua avisando em máquinas que não confiam no certificado: importe `certs/gestao-motorista.cer` em "Autoridades de Certificação Raiz Confiáveis" e "Editores Confiáveis" (`certmgr.msc`). Antes de distribuir a outras pessoas, trocar por um certificado pago (OV/EV ou Azure Trusted Signing) definindo `CSC_LINK` e `CSC_KEY_PASSWORD` e rodando `npm run dist`.
 
 ## 2. Qualidade e confiança
 
@@ -20,7 +19,7 @@ Lista de melhorias identificadas depois do MVP, em ordem sugerida de prioridade.
 
 ## 3. Melhorias de uso
 
-- [ ] **Edição da jornada:** corrigir datas e quilometragens de uma jornada já criada (hoje só as observações são editáveis).
+- [x] **Edição da jornada:** botão de lápis em Jornadas edita início, término, quilometragens e observações (o veículo não muda). Não deixa sobrepor outra jornada nem excluir do período corridas já lançadas.
 - [ ] **Restaurar backup** pela interface, com confirmação, além de abrir a pasta de backups.
 - [ ] **Backup automático periódico** (por exemplo, ao fechar o app, mantendo os últimos N).
 - [ ] **Filtros de período rápidos** nas listagens (hoje, semana, mês, últimos 30 dias) e filtro por veículo em Viagens.

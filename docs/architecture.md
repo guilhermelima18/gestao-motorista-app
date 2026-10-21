@@ -86,7 +86,7 @@ Grupos e métodos (fonte única: `src/shared/api.ts`):
 | Grupo | Métodos |
 |---|---|
 | `vehicles`, `platforms`, `expenses`, `refuelings` | `list`, `create`, `update`, `remove` |
-| `shifts` | `list`, `get`, `start`, `end`, `updateNotes`, `remove` |
+| `shifts` | `list`, `get`, `start`, `end`, `update`, `remove` |
 | `trips` | `list` (retorna itens e totais), `create`, `update`, `remove` |
 | `goals` | `list`, `progress`, `create`, `update`, `remove` |
 | `dashboard` | `get` |
@@ -133,7 +133,7 @@ Funções que recebem a conexão (`Db`) como parâmetro, o que permite testar co
 | Arquivo | Responsabilidade |
 |---|---|
 | `vehicles.ts`, `platforms.ts` | CRUD, exclusão segura, odômetro conhecido (`lastKnownOdometer`, `raiseVehicleOdometer`) |
-| `shifts.ts` | iniciar e encerrar em transação; uma jornada aberta por vez; validação de km |
+| `shifts.ts` | iniciar, encerrar e editar em transação; uma jornada aberta por vez; validação de km; edição sem sobrepor outra jornada nem excluir corridas do período |
 | `trips.ts` | CRUD, filtros, totais, regras de data e distância |
 | `refuelings.ts` | CRUD; total = `round(litros × preço)`; atualiza o odômetro do veículo |
 | `expenses.ts` | CRUD e filtros por período, categoria e veículo |

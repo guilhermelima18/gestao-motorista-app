@@ -94,7 +94,16 @@ export const endShiftSchema = z.object({
 })
 export type EndShiftInput = z.input<typeof endShiftSchema>
 
-export const shiftNotesSchema = z.object({ id: idSchema, notes: optionalText(500) })
+/** Edição completa: jornada aberta mantém término e km final vazios; encerrada exige os dois. */
+export const updateShiftSchema = z.object({
+  id: idSchema,
+  startedAt: dateTime('Data de início'),
+  endedAt: dateTime('Data de término').nullish().transform((v) => v ?? null),
+  startOdometer: kilometers('Quilometragem inicial'),
+  endOdometer: kilometers('Quilometragem final').nullish().transform((v) => v ?? null),
+  notes: optionalText(500),
+})
+export type UpdateShiftInput = z.input<typeof updateShiftSchema>
 
 // ---------- Trips (viagens) ----------
 export const tripSchema = z.object({
