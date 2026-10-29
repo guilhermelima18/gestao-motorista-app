@@ -42,8 +42,15 @@ const GOAL_TO_DASHBOARD: Record<GoalPeriod, DashboardPeriod> = {
   mensal: 'mes',
 }
 
-export function getGoalBounds(period: GoalPeriod, reference: Date): PeriodBounds {
-  return getPeriodBounds(GOAL_TO_DASHBOARD[period], reference)
+/** yyyy-MM-dd -> meia-noite local desse dia. */
+export function parseLocalDate(value: string): Date {
+  const [year, month, day] = value.split('-').map(Number)
+  return new Date(year!, month! - 1, day!)
+}
+
+/** Período da meta: o dia, a semana (segunda a segunda) ou o mês que contém a data de referência. */
+export function getGoalBounds(period: GoalPeriod, referenceDate: string): PeriodBounds {
+  return getPeriodBounds(GOAL_TO_DASHBOARD[period], parseLocalDate(referenceDate))
 }
 
 export function dayKey(date: Date): string {

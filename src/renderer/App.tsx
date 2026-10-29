@@ -3,6 +3,7 @@ import {
   Car,
   Fuel,
   LayoutDashboard,
+  LogOut,
   Receipt,
   Route,
   Settings as SettingsIcon,
@@ -14,10 +15,14 @@ import {
 } from 'lucide-react'
 import { Component, useCallback, useEffect, useState, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
-import { FeedbackProvider } from '@/components/ui/feedback'
+import { FeedbackProvider, useToast } from '@/components/ui/feedback'
+import { LoadingBlock } from '@/components/ui/display'
+import { AuthScreens } from '@/features/auth/AuthScreens'
+import { AuthProvider, useAuth } from '@/hooks/useAuth'
 import { useSettings } from '@/hooks/useLookups'
 import { useShortcut } from '@/hooks/useShortcut'
 import { useTheme } from '@/hooks/useTheme'
+import { errorMessage } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { ExpensesPage } from '@/pages/ExpensesPage'
@@ -69,6 +74,8 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean
 
 function Shell() {
   const [page, setPage] = useState<PageKey>(pageFromHash)
+  const { user, signOut } = useAuth()
+  const toast = useToast()
   const settings = useSettings()
   const [theme, setTheme] = useState<Theme>('sistema')
   useTheme(theme)
@@ -123,6 +130,19 @@ function Shell() {
             </button>
           )
         })}
+        <div className="mt-auto flex flex-col gap-1 border-t border-border pt-3">
+          <div className="truncate px-2 text-xs text-muted max-md:hidden" title={user?.email}>
+            {user?.name}
+          </div>
+          <button
+            onClick={() => void signOut().catch((error: unknown) => toast.error(errorMessage(error)))}
+            title="Sair da conta"
+            className="flex items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-fg hover:bg-surface-2 max-md:justify-center max-md:px-0"
+          >
+            <LogOut size={18} aria-hidden />
+            <span className="max-md:sr-only">Sair</span>
+          </button>
+        </div>
       </nav>
       <main className="min-w-0 flex-1 overflow-y-auto p-6 max-md:p-4">
         <ErrorBoundary key={page}>
@@ -142,10 +162,21 @@ function Shell() {
   )
 }
 
+/** Portão de acesso: sem usuário logado só as telas de autenticação existem. */
+function AuthGate() {
+  const { user, loading } = useAuth()
+  if (loading) return <LoadingBlock />
+  if (!user) return <AuthScreens />
+  // `key` remonta toda a interface ao trocar de usuário, descartando qualquer dado carregado do anterior.
+  return <Shell key={user.id} />
+}
+
 export function App() {
   return (
     <FeedbackProvider>
-      <Shell />
+      <AuthProvider>
+        <AuthGate />
+      </AuthProvider>
     </FeedbackProvider>
   )
 }

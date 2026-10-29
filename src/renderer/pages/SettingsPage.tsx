@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, ErrorBlock, LoadingBlock, PageHeader } from '@/components/ui/display'
 import { useToast } from '@/components/ui/feedback'
+import { AccountSection } from '@/features/auth/AccountSection'
 import { Field, Select } from '@/components/ui/form-controls'
 import { useApiQuery } from '@/hooks/useApiQuery'
 import { api, errorMessage, unwrap } from '@/lib/api'
@@ -44,6 +45,7 @@ export function SettingsPage({ onThemeChange }: { onThemeChange: (theme: Theme) 
       {settings.loading && !settings.data ? <LoadingBlock /> : null}
       {settings.error ? <ErrorBlock message={settings.error} onRetry={settings.reload} /> : null}
       <div className="flex max-w-2xl flex-col gap-4">
+        <AccountSection />
         {settings.data ? (
           <Card>
             <h2 className="mb-3 text-sm font-semibold">Aparência</h2>

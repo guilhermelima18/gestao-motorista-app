@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { isValidCpf, isValidPhone, onlyDigits } from './cpf'
 import {
   DASHBOARD_PERIODS,
   EXPENSE_CATEGORIES,
@@ -194,6 +195,15 @@ export const goalSchema = z.object({
   type: z.enum(GOAL_TYPES, { errorMap: () => ({ message: 'Tipo inválido' }) }),
   period: z.enum(GOAL_PERIODS, { errorMap: () => ({ message: 'Periodicidade inválida' }) }),
   targetAmount: positiveCents('Valor objetivo'),
+  /** Dia (yyyy-MM-dd) que define o período da meta: o próprio dia, a semana ou o mês que o contém. */
+  referenceDate: z
+    .string({ required_error: 'Data é obrigatória' })
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Data inválida')
+    .refine((v) => {
+      const [y, m, d] = v.split('-').map(Number)
+      const date = new Date(y!, m! - 1, d!)
+      return date.getFullYear() === y && date.getMonth() === m! - 1 && date.getDate() === d
+    }, 'Data inválida'),
   active: z.boolean().default(true),
 })
 export type GoalInput = z.input<typeof goalSchema>
@@ -205,6 +215,83 @@ export const settingSchema = z.discriminatedUnion('key', [
   z.object({ key: z.literal('veiculo_padrao_id'), value: z.string().regex(/^\d*$/) }),
 ])
 export type SettingInput = z.input<typeof settingSchema>
+
+// ---------- Auth (autenticação local) ----------
+export const MIN_PASSWORD_LENGTH = 8
+
+const cpfField = z
+  .string({ required_error: 'CPF é obrigatório' })
+  .transform(onlyDigits)
+  .refine((v) => v.length > 0, 'CPF é obrigatório')
+  .refine((v) => isValidCpf(v), 'CPF inválido')
+const passwordField = (label: string) =>
+  z
+    .string({ required_error: `${label} é obrigatória` })
+    .min(MIN_PASSWORD_LENGTH, `${label} deve ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres`)
+    .max(128, 'Máximo de 128 caracteres')
+const emailField = z
+  .string({ required_error: 'E-mail é obrigatório' })
+  .trim()
+  .min(1, 'E-mail é obrigatório')
+  .max(120, 'Máximo de 120 caracteres')
+  .email('E-mail inválido')
+const phoneField = z
+  .string()
+  .trim()
+  .nullish()
+  .transform((v) => (v ? onlyDigits(v) : null))
+  .refine((v) => v === null || isValidPhone(v), 'Celular inválido (informe DDD + número)')
+
+const confirmed = <T extends { confirmPassword: string }>(field: 'newPassword' | 'password') =>
+  (data: T & Record<string, unknown>) => data[field] === data.confirmPassword
+
+export const registerSchema = z
+  .object({
+    name: requiredText(80, 'Nome'),
+    cpf: cpfField,
+    email: emailField,
+    phone: phoneField,
+    password: passwordField('Senha'),
+    confirmPassword: z.string().default(''),
+  })
+  .refine(confirmed('password'), { message: 'As senhas não conferem', path: ['confirmPassword'] })
+export type RegisterInput = z.input<typeof registerSchema>
+
+export const loginSchema = z.object({
+  cpf: cpfField,
+  password: z.string({ required_error: 'Senha é obrigatória' }).min(1, 'Senha é obrigatória').max(128),
+  keepSignedIn: z.boolean().default(false),
+})
+export type LoginInput = z.input<typeof loginSchema>
+
+export const recoverSchema = z
+  .object({
+    cpf: cpfField,
+    recoveryCode: z
+      .string({ required_error: 'Código de recuperação é obrigatório' })
+      .transform((v) => v.toUpperCase().replace(/[^A-Z0-9]/g, ''))
+      .refine((v) => v.length > 0, 'Código de recuperação é obrigatório'),
+    newPassword: passwordField('Nova senha'),
+    confirmPassword: z.string().default(''),
+  })
+  .refine(confirmed('newPassword'), { message: 'As senhas não conferem', path: ['confirmPassword'] })
+export type RecoverInput = z.input<typeof recoverSchema>
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string({ required_error: 'Senha atual é obrigatória' }).min(1, 'Senha atual é obrigatória').max(128),
+    newPassword: passwordField('Nova senha'),
+    confirmPassword: z.string().default(''),
+  })
+  .refine(confirmed('newPassword'), { message: 'As senhas não conferem', path: ['confirmPassword'] })
+export type ChangePasswordInput = z.input<typeof changePasswordSchema>
+
+export const profileSchema = z.object({
+  name: requiredText(80, 'Nome'),
+  email: emailField,
+  phone: phoneField,
+})
+export type ProfileInput = z.input<typeof profileSchema>
 
 // ---------- Dashboard, reports and export ----------
 export const dashboardSchema = z.object({

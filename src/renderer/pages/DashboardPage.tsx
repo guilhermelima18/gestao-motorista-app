@@ -86,7 +86,7 @@ export function DashboardPage({ onNavigate }: { onNavigate: (page: 'shifts') => 
           </Card>
           {data.goals.length > 0 ? (
             <section aria-label="Metas">
-              <h2 className="mb-2 text-sm font-semibold">Metas</h2>
+              <h2 className="mb-2 text-sm font-semibold">Metas do período atual</h2>
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                 {data.goals.map((g) => (
                   <GoalProgressCard key={g.goal.id} progress={g} />

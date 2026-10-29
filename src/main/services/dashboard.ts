@@ -3,29 +3,30 @@ import { dashboardSchema } from '@shared/schemas'
 import type { DashboardData } from '@shared/types'
 import { addDays } from 'date-fns'
 import type { Db } from './common'
-import { listGoalProgress } from './goals'
+import { listCurrentGoalProgress } from './goals'
 import { getPeriodBounds } from './periods'
 import { getOpenShift } from './shifts'
 import { buildDailySeries, buildSummary } from './summary'
 
-function countRecords(db: Db): number {
+function countRecords(db: Db, userId: number): number {
   const row = db
     .prepare(
-      `SELECT (SELECT COUNT(*) FROM jornadas) + (SELECT COUNT(*) FROM viagens) + (SELECT COUNT(*) FROM abastecimentos)
-         + (SELECT COUNT(*) FROM despesas) AS total`,
+      `SELECT (SELECT COUNT(*) FROM jornadas WHERE usuario_id = @userId) + (SELECT COUNT(*) FROM viagens WHERE usuario_id = @userId)
+         + (SELECT COUNT(*) FROM abastecimentos WHERE usuario_id = @userId) + (SELECT COUNT(*) FROM despesas WHERE usuario_id = @userId)
+         AS total`,
     )
-    .get() as { total: number }
+    .get({ userId }) as { total: number }
   return row.total
 }
 
-export function getDashboard(db: Db, input: DashboardInput): DashboardData {
+export function getDashboard(db: Db, userId: number, input: DashboardInput): DashboardData {
   const { period, reference: referenceIso } = dashboardSchema.parse(input)
   const reference = referenceIso ? new Date(referenceIso) : new Date()
   const bounds = getPeriodBounds(period, reference)
 
   const revenueOf = (p: 'dia' | 'semana' | 'mes') => {
     const b = getPeriodBounds(p, reference)
-    return buildSummary(db, b.start, b.end).grossRevenue
+    return buildSummary(db, userId, b.start, b.end).grossRevenue
   }
 
   // Para o dia, o gráfico mostra os últimos 7 dias; para semana e mês, o próprio período.
@@ -33,13 +34,13 @@ export function getDashboard(db: Db, input: DashboardInput): DashboardData {
 
   return {
     period,
-    summary: buildSummary(db, bounds.start, bounds.end),
+    summary: buildSummary(db, userId, bounds.start, bounds.end),
     todayRevenue: revenueOf('dia'),
     weekRevenue: revenueOf('semana'),
     monthRevenue: revenueOf('mes'),
-    series: buildDailySeries(db, chart.start, chart.end),
-    goals: listGoalProgress(db, reference),
-    openShift: getOpenShift(db),
-    hasRecords: countRecords(db) > 0,
+    series: buildDailySeries(db, userId, chart.start, chart.end),
+    goals: listCurrentGoalProgress(db, userId, reference),
+    openShift: getOpenShift(db, userId),
+    hasRecords: countRecords(db, userId) > 0,
   }
 }

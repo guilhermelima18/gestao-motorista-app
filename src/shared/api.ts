@@ -1,13 +1,18 @@
 import type {
+  ChangePasswordInput,
   DashboardInput,
   EndShiftInput,
   ExpenseFilter,
   ExpenseInput,
   ExportInput,
   GoalInput,
+  LoginInput,
   PlatformInput,
+  ProfileInput,
+  RecoverInput,
   RefuelingFilter,
   RefuelingInput,
+  RegisterInput,
   ReportInput,
   SettingInput,
   StartShiftInput,
@@ -18,6 +23,7 @@ import type {
 } from './schemas'
 import type {
   AppInfo,
+  AuthUser,
   BackupResult,
   DashboardData,
   Expense,
@@ -25,7 +31,9 @@ import type {
   Goal,
   GoalProgress,
   Platform,
+  RecoverResult,
   Refueling,
+  RegisterResult,
   ReportData,
   Result,
   Settings,
@@ -40,6 +48,17 @@ type Id = { id: number }
 
 /** Superfície completa exposta ao renderer em `window.api`. */
 export interface MotoristaApi {
+  /** Únicos canais que funcionam sem usuário logado. */
+  auth: {
+    register(data: RegisterInput): R<RegisterResult>
+    login(data: LoginInput): R<AuthUser>
+    recover(data: RecoverInput): R<RecoverResult>
+    logout(): R<null>
+    /** Usuário atual (retoma a sessão salva, se houver); null quando não há login. */
+    session(): R<AuthUser | null>
+    updateProfile(data: ProfileInput): R<AuthUser>
+    changePassword(data: ChangePasswordInput): R<null>
+  }
   vehicles: {
     list(): R<Vehicle[]>
     create(data: VehicleInput): R<Vehicle>
@@ -104,6 +123,7 @@ type Groups = keyof MotoristaApi
 
 /** Lista de métodos IPC permitidos. Fonte única para o preload e para o registro dos handlers. */
 export const API_METHODS: { [G in Groups]: ReadonlyArray<keyof MotoristaApi[G] & string> } = {
+  auth: ['register', 'login', 'recover', 'logout', 'session', 'updateProfile', 'changePassword'],
   vehicles: ['list', 'create', 'update', 'remove'],
   platforms: ['list', 'create', 'update', 'remove'],
   shifts: ['list', 'get', 'start', 'end', 'update', 'remove'],

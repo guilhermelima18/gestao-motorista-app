@@ -4,6 +4,7 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { openDatabase } from './database/connection'
 import { registerIpc } from './ipc/register'
+import { createSessionStore } from './session-store'
 import type { Db } from './services/common'
 
 const DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL
@@ -55,7 +56,10 @@ function createWindow(): void {
   mainWindow.webContents.on('will-navigate', (event, url) => {
     if (!isTrustedUrl(url)) event.preventDefault()
   })
-  mainWindow.webContents.session.setPermissionRequestHandler((_wc, _permission, callback) => callback(false))
+  // Todas as permissões são negadas, exceto copiar texto para a área de transferência (botão "Copiar" do código de recuperação).
+  const allowed = (permission: string, url: string) => permission === 'clipboard-sanitized-write' && isTrustedUrl(url)
+  mainWindow.webContents.session.setPermissionRequestHandler((wc, permission, callback) => callback(allowed(permission, wc.getURL())))
+  mainWindow.webContents.session.setPermissionCheckHandler((_wc, permission, requestingOrigin) => allowed(permission, requestingOrigin))
 
   void mainWindow.loadURL(RENDERER_URL)
 }
@@ -91,7 +95,7 @@ async function start(): Promise<void> {
   }
 
   registerIpc(
-    { db, version: app.getVersion(), databasePath, backupsPath, saveFile },
+    { db, version: app.getVersion(), databasePath, backupsPath, saveFile, sessionStore: createSessionStore(userData) },
     { getWebContents: () => mainWindow?.webContents ?? null, isTrustedUrl },
   )
   createWindow()

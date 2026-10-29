@@ -1,15 +1,23 @@
 import { createHash } from 'node:crypto'
 import type Database from 'better-sqlite3'
 import { MIGRATION_001 } from './migrations/001_initial_schema'
+import { MIGRATION_002 } from './migrations/002_usuarios'
+import { MIGRATION_003 } from './migrations/003_metas_por_data'
 
 export interface Migration {
   version: number
   name: string
   sql: string
+  /** Executa com `foreign_keys` desligado e confere `foreign_key_check` ao final (necessário para recriar tabelas pai). */
+  disableForeignKeys?: boolean
 }
 
 /** Lista ordenada. Nunca altere uma migração já publicada: crie uma nova com ALTER TABLE/CREATE. */
-export const MIGRATIONS: Migration[] = [{ version: 1, name: 'esquema_inicial', sql: MIGRATION_001 }]
+export const MIGRATIONS: Migration[] = [
+  { version: 1, name: 'esquema_inicial', sql: MIGRATION_001 },
+  { version: 2, name: 'usuarios', sql: MIGRATION_002, disableForeignKeys: true },
+  { version: 3, name: 'metas_por_data', sql: MIGRATION_003 },
+]
 
 function checksum(sql: string): string {
   return createHash('sha256').update(sql).digest('hex')
@@ -61,7 +69,20 @@ export function migrate(
   const apply = db.transaction((m: Migration) => {
     db.exec(m.sql)
     register.run(m.version, m.name, checksum(m.sql), new Date().toISOString())
+    if (m.disableForeignKeys) {
+      const violations = db.pragma('foreign_key_check') as unknown[]
+      if (violations.length > 0) throw new Error(`A migração ${m.version} (${m.name}) deixou chaves estrangeiras inválidas.`)
+    }
   })
-  for (const m of pending) apply(m)
+  for (const m of pending) {
+    // O pragma não tem efeito dentro de uma transação, por isso é alterado antes e restaurado depois.
+    const foreignKeys = db.pragma('foreign_keys', { simple: true })
+    if (m.disableForeignKeys) db.pragma('foreign_keys = OFF')
+    try {
+      apply(m)
+    } finally {
+      if (m.disableForeignKeys) db.pragma(`foreign_keys = ${foreignKeys === 1 ? 'ON' : 'OFF'}`)
+    }
+  }
   return pending.map((m) => m.version)
 }

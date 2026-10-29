@@ -45,7 +45,7 @@ export function buildCsv(headers: string[], rows: CsvCell[][]): string {
 
 const yesNo = (value: boolean) => (value ? 'Sim' : 'Não')
 
-export function exportToCsv(db: Db, input: ExportInput): { fileName: string; content: string } {
+export function exportToCsv(db: Db, userId: number, input: ExportInput): { fileName: string; content: string } {
   const data = exportSchema.parse(input)
   const period = { from: data.from ?? null, to: data.to ?? null }
   const stamp = format(new Date(), 'yyyyMMdd')
@@ -56,7 +56,7 @@ export function exportToCsv(db: Db, input: ExportInput): { fileName: string; con
         fileName: `viagens-${stamp}.csv`,
         content: buildCsv(
           ['Data', 'Plataforma', 'Origem', 'Destino', 'Valor da corrida (R$)', 'Gorjeta (R$)', 'Adicionais (R$)', 'Receita total (R$)', 'Distância (km)', 'Duração (min)', 'Km vazio', 'Jornada', 'Observações'],
-          listTrips(db, period).items.map((t) => [
+          listTrips(db, userId, period).items.map((t) => [
             csvDate(t.occurredAt), t.platformName, t.origin, t.destination, csvMoney(t.fareAmount), csvMoney(t.tip),
             csvMoney(t.extras), csvMoney(t.totalRevenue), csvNumber(t.distanceKm), t.durationMinutes,
             csvNumber(t.deadheadKm), t.shiftId, t.notes,
@@ -68,7 +68,7 @@ export function exportToCsv(db: Db, input: ExportInput): { fileName: string; con
         fileName: `jornadas-${stamp}.csv`,
         content: buildCsv(
           ['Início', 'Término', 'Veículo', 'Km inicial', 'Km final', 'Distância (km)', 'Viagens', 'Faturamento (R$)', 'Observações'],
-          listShifts(db).map((s) => [
+          listShifts(db, userId).map((s) => [
             csvDate(s.startedAt), s.endedAt ? csvDate(s.endedAt) : 'Em andamento', s.vehicleName, csvNumber(s.startOdometer),
             s.endOdometer === null ? null : csvNumber(s.endOdometer), s.distanceKm === null ? null : csvNumber(s.distanceKm),
             s.tripCount, csvMoney(s.revenue), s.notes,
@@ -80,7 +80,7 @@ export function exportToCsv(db: Db, input: ExportInput): { fileName: string; con
         fileName: `abastecimentos-${stamp}.csv`,
         content: buildCsv(
           ['Data', 'Veículo', 'Combustível', 'Litros', 'Preço por litro (R$)', 'Valor total (R$)', 'Odômetro (km)', 'Tanque completo', 'Posto', 'Observações'],
-          listRefuelings(db, { from: period.from, to: period.to }).map((a) => [
+          listRefuelings(db, userId, { from: period.from, to: period.to }).map((a) => [
             csvDate(a.refueledAt), a.vehicleName, a.fuel, csvNumber(a.liters, 2), csvMoney(a.pricePerLiter),
             csvMoney(a.totalAmount), csvNumber(a.odometer), yesNo(a.fullTank), a.station, a.notes,
           ]),
@@ -91,7 +91,7 @@ export function exportToCsv(db: Db, input: ExportInput): { fileName: string; con
         fileName: `despesas-${stamp}.csv`,
         content: buildCsv(
           ['Data', 'Descrição', 'Categoria', 'Tipo', 'Valor (R$)', 'Veículo', 'Observações'],
-          listExpenses(db, period).map((d) => [
+          listExpenses(db, userId, period).map((d) => [
             csvDate(d.expenseDate), d.description, d.category, d.kind === 'fixa' ? 'Fixa' : 'Operacional',
             csvMoney(d.amount), d.vehicleName, d.notes,
           ]),
@@ -99,7 +99,7 @@ export function exportToCsv(db: Db, input: ExportInput): { fileName: string; con
       }
     case 'report': {
       if (!data.from || !data.to) throw new Error('Período obrigatório para o relatório.')
-      const report = generateReport(db, { from: data.from, to: data.to })
+      const report = generateReport(db, userId, { from: data.from, to: data.to })
       const s = report.summary
       const opt = (v: number | null) => (v === null ? 'n/d' : csvMoney(v))
       const rows: CsvCell[][] = [

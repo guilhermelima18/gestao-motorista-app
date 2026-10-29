@@ -6,6 +6,7 @@ import { FormActions } from '@/components/FormActions'
 import { Field, Input, Select } from '@/components/ui/form-controls'
 import { useFormSubmit } from '@/hooks/useFormSubmit'
 import { api, unwrap } from '@/lib/api'
+import { goalPeriodLabel, todayLocalDate } from '@/lib/dates'
 import { moneyField, schemaResolver } from '@/lib/form'
 
 interface GoalFormValues {
@@ -13,6 +14,7 @@ interface GoalFormValues {
   type: string
   period: string
   targetAmount: string
+  referenceDate: string
   active: boolean
 }
 
@@ -21,6 +23,7 @@ const toInput = (v: GoalFormValues) => ({
   type: v.type,
   period: v.period,
   targetAmount: moneyField(v.targetAmount),
+  referenceDate: v.referenceDate,
   active: v.active,
 })
 
@@ -32,10 +35,14 @@ export function GoalForm({ goal, onDone, onCancel }: { goal: Goal | null; onDone
       type: goal?.type ?? 'faturamento',
       period: goal?.period ?? 'diaria',
       targetAmount: goal ? centsToText(goal.targetAmount) : '',
+      referenceDate: goal?.referenceDate ?? todayLocalDate(),
       active: goal?.active ?? true,
     },
   })
   const { errors } = form.formState
+  const period = form.watch('period') as 'diaria' | 'semanal' | 'mensal'
+  const referenceDate = form.watch('referenceDate')
+  const periodPreview = /^\d{4}-\d{2}-\d{2}$/.test(referenceDate) ? `Vale para: ${goalPeriodLabel(period, referenceDate)}` : undefined
   const { submit, submitting } = useFormSubmit(
     form,
     (values) => {
@@ -49,7 +56,7 @@ export function GoalForm({ goal, onDone, onCancel }: { goal: Goal | null; onDone
   return (
     <form onSubmit={submit} noValidate className="grid grid-cols-1 gap-3 sm:grid-cols-2">
       <Field label="Descrição *" error={errors.description?.message} className="sm:col-span-2">
-        {(f) => <Input {...form.register('description')} id={f.id} aria-invalid={f.invalid} aria-describedby={f.describedBy} autoFocus placeholder="Ex.: Meta diária" />}
+        {(f) => <Input {...form.register('description')} id={f.id} aria-invalid={f.invalid} aria-describedby={f.describedBy} autoFocus placeholder="Ex.: Meta do dia" />}
       </Field>
       <Field label="Tipo *" error={errors.type?.message} hint="Lucro usa o lucro operacional estimado.">
         {(f) => (
@@ -67,6 +74,13 @@ export function GoalForm({ goal, onDone, onCancel }: { goal: Goal | null; onDone
             <option value="mensal">Mensal</option>
           </Select>
         )}
+      </Field>
+      <Field
+        label="Data de referência *"
+        error={errors.referenceDate?.message}
+        hint={periodPreview ?? 'Dia, semana ou mês a que a meta se refere.'}
+      >
+        {(f) => <Input {...form.register('referenceDate')} id={f.id} type="date" aria-invalid={f.invalid} aria-describedby={f.describedBy} />}
       </Field>
       <Field label="Valor objetivo (R$) *" error={errors.targetAmount?.message}>
         {(f) => <Input {...form.register('targetAmount')} id={f.id} inputMode="decimal" placeholder="0,00" aria-invalid={f.invalid} aria-describedby={f.describedBy} />}

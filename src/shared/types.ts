@@ -107,13 +107,19 @@ export interface Goal {
   type: GoalType
   period: GoalPeriod
   targetAmount: number
+  /** yyyy-MM-dd: o período da meta é o dia, a semana ou o mês que contém esta data. */
+  referenceDate: string
   active: boolean
   createdAt: string
   updatedAt: string
 }
 
+/** Em relação a agora: período em andamento, já encerrado (histórico) ou ainda por vir. */
+export type GoalPhase = 'current' | 'past' | 'future'
+
 export interface GoalProgress {
   goal: Goal
+  phase: GoalPhase
   achieved: number
   remaining: number
   /** De 0 a 1 (limitado em 1). */
@@ -208,6 +214,28 @@ export interface TripTotals {
 export interface TripList {
   items: Trip[]
   totals: TripTotals
+}
+
+// ---------- Autenticação ----------
+
+export interface AuthUser {
+  id: number
+  name: string
+  /** Somente dígitos. */
+  cpf: string
+  email: string
+  phone: string | null
+  createdAt: string
+}
+
+export interface RegisterResult {
+  /** Mostrado uma única vez; só o hash fica guardado. */
+  recoveryCode: string
+}
+
+export interface RecoverResult {
+  /** Novo código, também mostrado uma única vez. */
+  recoveryCode: string
 }
 
 // ---------- Contrato IPC ----------

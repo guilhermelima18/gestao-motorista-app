@@ -1,6 +1,7 @@
 import { formatCurrency } from '@shared/money'
 import type { GoalProgress } from '@shared/types'
 import { Badge, Card, ProgressBar } from '@/components/ui/display'
+import { goalPeriodLabel } from '@/lib/dates'
 
 const PERIOD_LABEL = { diaria: 'diária', semanal: 'semanal', mensal: 'mensal' } as const
 
@@ -12,7 +13,7 @@ export function GoalProgressCard({ progress }: { progress: GoalProgress }) {
         <div>
           <div className="font-medium">{goal.description}</div>
           <div className="text-xs text-muted">
-            Meta {PERIOD_LABEL[goal.period]} de {goal.type === 'lucro' ? 'lucro' : 'faturamento'}
+            Meta {PERIOD_LABEL[goal.period]} de {goal.type === 'lucro' ? 'lucro' : 'faturamento'} · {goalPeriodLabel(goal.period, goal.referenceDate)}
           </div>
         </div>
         {progress.reached ? <Badge tone="success">Atingida</Badge> : <Badge tone="info">{Math.round(progress.ratio * 100)}%</Badge>}

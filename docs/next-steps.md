@@ -12,12 +12,14 @@ Lista de melhorias identificadas depois do MVP, em ordem sugerida de prioridade.
 
 - [ ] **Testes de interface** (Vitest + Testing Library, ou Playwright com Electron) para os fluxos: iniciar jornada → lançar corrida → ver o dashboard.
 - [ ] **Teste automatizado de segurança do IPC:** remetente não autorizado, canal fora da allowlist e payload inválido.
-- [ ] **Teste de atualização do esquema** com uma cópia de banco real de uma versão anterior (quando existir a migração 002).
+- [x] **Teste de atualização do esquema** com banco da versão 1 populado (`tests/integration/migrations.test.ts`) e simulação manual sobre uma cópia do banco real. Falta repetir no executável empacotado (`npm run dist:assinado` instalado sobre a versão atual).
 - [ ] **Lint** (ESLint com regras de React Hooks) e formatação (Prettier) no projeto, com script `npm run lint`.
 - [ ] **Integração contínua** rodando typecheck, testes e build.
 - [ ] **Divisão do bundle do renderer** (`import()` por página) para reduzir o aviso de 845 kB do Vite.
 
 ## 3. Melhorias de uso
+
+- [x] **Contas de usuário:** login por CPF e senha, dados separados por usuário, código de recuperação, "Manter conectado", Sair e Minha conta. Os dados que já existiam passam a pertencer ao primeiro usuário cadastrado.
 
 - [x] **Edição da jornada:** botão de lápis em Jornadas edita início, término, quilometragens e observações (o veículo não muda). Não deixa sobrepor outra jornada nem excluir do período corridas já lançadas.
 - [ ] **Restaurar backup** pela interface, com confirmação, além de abrir a pasta de backups.
@@ -26,7 +28,7 @@ Lista de melhorias identificadas depois do MVP, em ordem sugerida de prioridade.
 - [ ] **Atalhos de teclado** adicionais: salvar com `Ctrl+Enter` e foco na busca.
 - [ ] **Importação de CSV** para trazer o histórico de viagens de planilhas.
 - [ ] **Relatórios em PDF** e gráficos adicionais (receita por hora do dia, por dia da semana).
-- [ ] **Histórico de metas:** guardar o resultado de cada dia, semana e mês fechados (hoje a meta só calcula o período corrente).
+- [x] **Metas por data e histórico:** cada meta tem data de referência e é preenchida pelas corridas do seu próprio período; a tela de Metas lista as em andamento, o histórico (atingida ou não) e as futuras. O resultado é recalculado ao vivo, não congelado: editar uma corrida antiga altera o histórico. Possível evolução: metas recorrentes (criar a meta de cada dia automaticamente).
 - [ ] **Despesas recorrentes** (seguro, IPVA, financiamento) lançadas automaticamente por mês.
 - [ ] **Estado de pagamento nas despesas** (paga ou a pagar), para tornar o resultado de caixa exato em vez de aproximado.
 
@@ -43,6 +45,8 @@ Lista de melhorias identificadas depois do MVP, em ordem sugerida de prioridade.
 - Apoio a obrigações tributárias (MEI, carnê-leão).
 - Sincronização opcional entre dispositivos e aplicativo para celular.
 - Importação de relatórios exportados da Uber e da 99.
+- Autenticação em nuvem e sincronização entre computadores (hoje o login é só local) e redefinição de senha por e-mail.
+- Administração de contas (desativar ou excluir um usuário, exportar os dados de um usuário).
 
 ## 6. Operação
 

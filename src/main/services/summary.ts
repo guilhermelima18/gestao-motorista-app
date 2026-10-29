@@ -30,43 +30,43 @@ interface ShiftRow extends ShiftFacts {
  * - Horas, km e as taxas por hora/km usam as jornadas ENCERRADAS que começaram no período, e a receita
  *   dessas mesmas jornadas, para não misturar receita de jornada aberta com horas ainda não fechadas.
  */
-export function buildSummary(db: Db, start: Date, end: Date): Summary {
+export function buildSummary(db: Db, userId: number, start: Date, end: Date): Summary {
   const from = start.toISOString()
   const to = end.toISOString()
 
   const trips = db
     .prepare(
       `SELECT valor_corrida AS fareAmount, gorjeta AS tip, adicionais AS extras, distancia_km AS distanceKm,
-         quilometragem_vazia_km AS deadheadKm FROM viagens WHERE realizada_em >= ? AND realizada_em < ?`,
+         quilometragem_vazia_km AS deadheadKm FROM viagens WHERE usuario_id = ? AND realizada_em >= ? AND realizada_em < ?`,
     )
-    .all(from, to) as TripFacts[]
+    .all(userId, from, to) as TripFacts[]
   const revenue = grossRevenue(trips)
 
   const closedShifts = db
     .prepare(
       `SELECT id, veiculo_id AS vehicleId, inicio_em AS startedAt, fim_em AS endedAt,
          quilometragem_inicial AS startOdometer, quilometragem_final AS endOdometer
-       FROM jornadas WHERE inicio_em >= ? AND inicio_em < ? AND fim_em IS NOT NULL`,
+       FROM jornadas WHERE usuario_id = ? AND inicio_em >= ? AND inicio_em < ? AND fim_em IS NOT NULL`,
     )
-    .all(from, to) as ShiftRow[]
+    .all(userId, from, to) as ShiftRow[]
   const kmDriven = totalKm(closedShifts)
   const hoursWorked = totalHours(closedShifts)
   const closedShiftsRevenue = (
     db
       .prepare(
         `SELECT COALESCE(SUM(t.valor_corrida + t.gorjeta + t.adicionais), 0) AS total
-         FROM viagens t JOIN jornadas j ON j.id = t.jornada_id
-         WHERE j.inicio_em >= ? AND j.inicio_em < ? AND j.fim_em IS NOT NULL`,
+         FROM viagens t JOIN jornadas j ON j.id = t.jornada_id AND j.usuario_id = t.usuario_id
+         WHERE t.usuario_id = ? AND j.inicio_em >= ? AND j.inicio_em < ? AND j.fim_em IS NOT NULL`,
       )
-      .get(from, to) as { total: number }
+      .get(userId, from, to) as { total: number }
   ).total
 
   const expenseRows = db
     .prepare(
       `SELECT categoria AS category, tipo AS kind, COALESCE(SUM(valor), 0) AS total FROM despesas
-       WHERE data_despesa >= ? AND data_despesa < ? GROUP BY categoria, tipo`,
+       WHERE usuario_id = ? AND data_despesa >= ? AND data_despesa < ? GROUP BY categoria, tipo`,
     )
-    .all(from, to) as { category: string; kind: string; total: number }[]
+    .all(userId, from, to) as { category: string; kind: string; total: number }[]
   const totalExpenses = expenseRows.reduce((sum, r) => sum + r.total, 0)
   // Financiamento é fluxo de caixa, não custo operacional; despesas fixas ficam fora do lucro operacional.
   const isOperating = (r: { category: string; kind: string }) => r.kind === 'operacional' && r.category !== 'Financiamento'
@@ -78,8 +78,10 @@ export function buildSummary(db: Db, start: Date, end: Date): Summary {
 
   const totalRefuelings = (
     db
-      .prepare('SELECT COALESCE(SUM(valor_total), 0) AS total FROM abastecimentos WHERE abastecido_em >= ? AND abastecido_em < ?')
-      .get(from, to) as { total: number }
+      .prepare(
+        'SELECT COALESCE(SUM(valor_total), 0) AS total FROM abastecimentos WHERE usuario_id = ? AND abastecido_em >= ? AND abastecido_em < ?',
+      )
+      .get(userId, from, to) as { total: number }
   ).total
 
   // Combustível consumido estimado, por veículo, usando todo o histórico de abastecimentos até o fim do período.
@@ -90,11 +92,12 @@ export function buildSummary(db: Db, start: Date, end: Date): Summary {
   let fuelUnknownKm = 0
   const refuelingsStatement = db.prepare(
     `SELECT abastecido_em AS refueledAt, litros AS liters, preco_por_litro AS pricePerLiter, valor_total AS totalAmount,
-       quilometragem AS odometer, tanque_completo AS fullTank FROM abastecimentos WHERE veiculo_id = ? AND abastecido_em < ?`,
+       quilometragem AS odometer, tanque_completo AS fullTank FROM abastecimentos
+     WHERE usuario_id = ? AND veiculo_id = ? AND abastecido_em < ?`,
   )
   for (const [vehicleId, km] of kmByVehicle) {
     if (km <= 0) continue
-    const history = (refuelingsStatement.all(vehicleId, to) as (Omit<RefuelingFacts, 'fullTank'> & { fullTank: number })[]).map(
+    const history = (refuelingsStatement.all(userId, vehicleId, to) as (Omit<RefuelingFacts, 'fullTank'> & { fullTank: number })[]).map(
       (r) => ({ ...r, fullTank: r.fullTank === 1 }),
     )
     const consumption = averageConsumption(history)
@@ -155,7 +158,7 @@ export function buildSummary(db: Db, start: Date, end: Date): Summary {
 }
 
 /** Série diária de faturamento e despesas (despesas + abastecimentos) para os gráficos. */
-export function buildDailySeries(db: Db, start: Date, end: Date): DailyPoint[] {
+export function buildDailySeries(db: Db, userId: number, start: Date, end: Date): DailyPoint[] {
   const from = start.toISOString()
   const to = end.toISOString()
   const points = new Map<string, DailyPoint>(daysInRange(start, end).map((day) => [day, { day, revenue: 0, expenses: 0 }]))
@@ -168,21 +171,24 @@ export function buildDailySeries(db: Db, start: Date, end: Date): DailyPoint[] {
   }
   add(
     db
-      .prepare('SELECT realizada_em AS at, valor_corrida + gorjeta + adicionais AS amount FROM viagens WHERE realizada_em >= ? AND realizada_em < ?')
-      .all(from, to) as { at: string; amount: number }[],
+      .prepare(
+        'SELECT realizada_em AS at, valor_corrida + gorjeta + adicionais AS amount FROM viagens WHERE usuario_id = ? AND realizada_em >= ? AND realizada_em < ?',
+      )
+      .all(userId, from, to) as { at: string; amount: number }[],
     'revenue',
   )
   add(
-    db.prepare('SELECT data_despesa AS at, valor AS amount FROM despesas WHERE data_despesa >= ? AND data_despesa < ?').all(from, to) as {
-      at: string
-      amount: number
-    }[],
+    db
+      .prepare('SELECT data_despesa AS at, valor AS amount FROM despesas WHERE usuario_id = ? AND data_despesa >= ? AND data_despesa < ?')
+      .all(userId, from, to) as { at: string; amount: number }[],
     'expenses',
   )
   add(
     db
-      .prepare('SELECT abastecido_em AS at, valor_total AS amount FROM abastecimentos WHERE abastecido_em >= ? AND abastecido_em < ?')
-      .all(from, to) as { at: string; amount: number }[],
+      .prepare(
+        'SELECT abastecido_em AS at, valor_total AS amount FROM abastecimentos WHERE usuario_id = ? AND abastecido_em >= ? AND abastecido_em < ?',
+      )
+      .all(userId, from, to) as { at: string; amount: number }[],
     'expenses',
   )
   return [...points.values()]

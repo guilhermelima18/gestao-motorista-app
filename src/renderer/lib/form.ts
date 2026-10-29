@@ -1,5 +1,5 @@
 import { parseCents, parseNumber } from '@shared/money'
-import type { FieldValues, Resolver } from 'react-hook-form'
+import type { FieldValues, Resolver, UseFormRegisterReturn } from 'react-hook-form'
 import type { ZodTypeAny } from 'zod'
 
 // Conversores de campos de texto do formulário para os tipos esperados pelos schemas compartilhados.
@@ -43,5 +43,16 @@ export function schemaResolver<V extends FieldValues>(schema: ZodTypeAny, toInpu
       if (!errors[key]) errors[key] = { type: issue.code, message: issue.message }
     }
     return { values: {}, errors } as ReturnType<Resolver<V>>
+  }
+}
+
+/** Aplica uma máscara de digitação (CPF, celular) a um campo registrado no React Hook Form. */
+export function withMask(registration: UseFormRegisterReturn, mask: (value: string) => string): UseFormRegisterReturn {
+  return {
+    ...registration,
+    onChange: (event) => {
+      event.target.value = mask(event.target.value)
+      return registration.onChange(event)
+    },
   }
 }

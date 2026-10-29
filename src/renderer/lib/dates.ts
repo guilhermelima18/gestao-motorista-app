@@ -1,4 +1,5 @@
-import { addDays, format, parseISO, startOfDay } from 'date-fns'
+import { addDays, endOfWeek, format, parseISO, startOfDay, startOfWeek } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 
 export function formatDateTime(iso: string): string {
   return format(parseISO(iso), 'dd/MM/yyyy HH:mm')
@@ -49,4 +50,24 @@ export function futureDateWarning(value: string | undefined): string | undefined
 export function formatHours(hours: number): string {
   const totalMinutes = Math.round(hours * 60)
   return `${Math.floor(totalMinutes / 60)}h ${String(totalMinutes % 60).padStart(2, '0')}min`
+}
+
+/** Hoje como yyyy-MM-dd (horário local), para campos <input type="date">. */
+export function todayLocalDate(): string {
+  return format(new Date(), 'yyyy-MM-dd')
+}
+
+/**
+ * Rótulo do período de uma meta a partir da periodicidade e da data de referência:
+ * "22/10/2026 (quinta-feira)", "19/10 a 25/10/2026" ou "Outubro de 2026".
+ */
+export function goalPeriodLabel(period: 'diaria' | 'semanal' | 'mensal', referenceDate: string): string {
+  const date = parseISO(referenceDate)
+  if (period === 'diaria') return format(date, "dd/MM/yyyy (EEEE)", { locale: ptBR })
+  if (period === 'semanal') {
+    const start = startOfWeek(date, { weekStartsOn: 1 })
+    return `${format(start, 'dd/MM')} a ${format(endOfWeek(date, { weekStartsOn: 1 }), 'dd/MM/yyyy')}`
+  }
+  const label = format(date, "MMMM 'de' yyyy", { locale: ptBR })
+  return label.charAt(0).toUpperCase() + label.slice(1)
 }
