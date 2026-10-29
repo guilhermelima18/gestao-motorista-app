@@ -7,7 +7,7 @@ import { Field, Input, Select, Textarea } from '@/components/ui/form-controls'
 import { useFormSubmit } from '@/hooks/useFormSubmit'
 import { api, unwrap } from '@/lib/api'
 import { futureDateWarning, localInputToIso, nowLocalInput, toLocalInput } from '@/lib/dates'
-import { idField, moneyField, numberField, schemaResolver } from '@/lib/form'
+import { idField, distanceToText, maskDistance, maskMoney, moneyField, numberField, schemaResolver, withMask } from '@/lib/form'
 
 interface TripFormValues {
   shiftId: string
@@ -63,9 +63,9 @@ export function TripForm({ trip, shifts, platforms, defaultShiftId, onDone, onCa
       fareAmount: trip ? centsToText(trip.fareAmount) : '',
       tip: trip ? money(trip.tip) : '',
       extras: trip ? money(trip.extras) : '',
-      distanceKm: trip?.distanceKm.toString().replace('.', ',') ?? '',
+      distanceKm: trip ? distanceToText(trip.distanceKm) : '',
       durationMinutes: trip?.durationMinutes ? trip.durationMinutes.toString() : '',
-      deadheadKm: trip?.deadheadKm ? trip.deadheadKm.toString().replace('.', ',') : '',
+      deadheadKm: trip?.deadheadKm ? distanceToText(trip.deadheadKm) : '',
       origin: trip?.origin ?? '',
       destination: trip?.destination ?? '',
       notes: trip?.notes ?? '',
@@ -111,10 +111,10 @@ export function TripForm({ trip, shifts, platforms, defaultShiftId, onDone, onCa
         )}
       </Field>
       <Field label="Valor da corrida (R$) *" error={errors.fareAmount?.message}>
-        {(f) => <Input {...form.register('fareAmount')} id={f.id} inputMode="decimal" placeholder="0,00" aria-invalid={f.invalid} aria-describedby={f.describedBy} autoFocus />}
+        {(f) => <Input {...withMask(form.register('fareAmount'), maskMoney)} id={f.id} inputMode="numeric" placeholder="R$ 0,00" aria-invalid={f.invalid} aria-describedby={f.describedBy} autoFocus />}
       </Field>
       <Field label="Distância (km) *" error={errors.distanceKm?.message}>
-        {(f) => <Input {...form.register('distanceKm')} id={f.id} inputMode="decimal" aria-invalid={f.invalid} aria-describedby={f.describedBy} />}
+        {(f) => <Input {...withMask(form.register('distanceKm'), maskDistance)} id={f.id} inputMode="decimal" aria-invalid={f.invalid} aria-describedby={f.describedBy} />}
       </Field>
       <Field label="Data e hora *" error={errors.occurredAt?.message} warning={dateWarning}>
         {(f) => <Input type="datetime-local" {...form.register('occurredAt')} id={f.id} aria-invalid={f.invalid} aria-describedby={f.describedBy} />}
@@ -123,16 +123,16 @@ export function TripForm({ trip, shifts, platforms, defaultShiftId, onDone, onCa
         <summary className="cursor-pointer text-sm font-medium">Mais detalhes (opcional)</summary>
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Field label="Gorjeta (R$)" error={errors.tip?.message}>
-            {(f) => <Input {...form.register('tip')} id={f.id} inputMode="decimal" aria-invalid={f.invalid} aria-describedby={f.describedBy} />}
+            {(f) => <Input {...withMask(form.register('tip'), maskMoney)} id={f.id} inputMode="numeric" placeholder="R$ 0,00" aria-invalid={f.invalid} aria-describedby={f.describedBy} />}
           </Field>
           <Field label="Adicionais (R$)" error={errors.extras?.message}>
-            {(f) => <Input {...form.register('extras')} id={f.id} inputMode="decimal" aria-invalid={f.invalid} aria-describedby={f.describedBy} />}
+            {(f) => <Input {...withMask(form.register('extras'), maskMoney)} id={f.id} inputMode="numeric" placeholder="R$ 0,00" aria-invalid={f.invalid} aria-describedby={f.describedBy} />}
           </Field>
           <Field label="Duração (min)" error={errors.durationMinutes?.message}>
             {(f) => <Input {...form.register('durationMinutes')} id={f.id} inputMode="numeric" aria-invalid={f.invalid} aria-describedby={f.describedBy} />}
           </Field>
           <Field label="Km vazio até o embarque" error={errors.deadheadKm?.message} hint="Deslocamento sem passageiro atribuído a esta corrida.">
-            {(f) => <Input {...form.register('deadheadKm')} id={f.id} inputMode="decimal" aria-invalid={f.invalid} aria-describedby={f.describedBy} />}
+            {(f) => <Input {...withMask(form.register('deadheadKm'), maskDistance)} id={f.id} inputMode="decimal" aria-invalid={f.invalid} aria-describedby={f.describedBy} />}
           </Field>
           <Field label="Origem" error={errors.origin?.message}>
             {(f) => <Input {...form.register('origin')} id={f.id} />}

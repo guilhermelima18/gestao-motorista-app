@@ -14,7 +14,8 @@ describe('valores em centavos', () => {
 
   it('formata em reais (pt-BR)', () => {
     expect(formatCurrency(1250).replace(/\s/g, ' ')).toBe('R$ 12,50')
-    expect(centsToText(1250)).toBe('12,50')
+    expect(centsToText(1250).replace(/\s/g, ' ')).toBe('R$ 12,50')
+    expect(centsToText(123456).replace(/\s/g, ' ')).toBe('R$ 1.234,56')
   })
 
   it('arredonda meio centavo para cima', () => {

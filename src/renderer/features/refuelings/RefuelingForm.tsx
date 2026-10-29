@@ -8,7 +8,7 @@ import { Field, Input, Select, Textarea } from '@/components/ui/form-controls'
 import { useFormSubmit } from '@/hooks/useFormSubmit'
 import { api, unwrap } from '@/lib/api'
 import { futureDateWarning, localInputToIso, nowLocalInput, toLocalInput } from '@/lib/dates'
-import { idField, moneyField, numberField, optionalIdField, schemaResolver } from '@/lib/form'
+import { idField, kmToText, maskKm, maskMoney, moneyField, numberField, optionalIdField, schemaResolver, withMask } from '@/lib/form'
 
 interface RefuelingFormValues {
   vehicleId: string
@@ -57,7 +57,7 @@ export function RefuelingForm({ refueling, vehicles, shifts, settings, onDone, o
       fuel: refueling?.fuel ?? defaultVehicle?.mainFuel ?? 'Gasolina',
       liters: refueling?.liters.toString().replace('.', ',') ?? '',
       pricePerLiter: refueling ? centsToText(refueling.pricePerLiter) : '',
-      odometer: refueling?.odometer.toString().replace('.', ',') ?? defaultVehicle?.currentOdometer?.toString().replace('.', ',') ?? '',
+      odometer: (refueling?.odometer ?? defaultVehicle?.currentOdometer) != null ? kmToText((refueling?.odometer ?? defaultVehicle?.currentOdometer) as number) : '',
       fullTank: refueling?.fullTank ?? true,
       station: refueling?.station ?? '',
       notes: refueling?.notes ?? '',
@@ -112,13 +112,13 @@ export function RefuelingForm({ refueling, vehicles, shifts, settings, onDone, o
         {(f) => <Input {...form.register('liters')} id={f.id} inputMode="decimal" aria-invalid={f.invalid} aria-describedby={f.describedBy} autoFocus />}
       </Field>
       <Field label="Preço por litro (R$) *" error={errors.pricePerLiter?.message}>
-        {(f) => <Input {...form.register('pricePerLiter')} id={f.id} inputMode="decimal" placeholder="0,00" aria-invalid={f.invalid} aria-describedby={f.describedBy} />}
+        {(f) => <Input {...withMask(form.register('pricePerLiter'), maskMoney)} id={f.id} inputMode="numeric" placeholder="R$ 0,00" aria-invalid={f.invalid} aria-describedby={f.describedBy} />}
       </Field>
       <Field label="Valor total (calculado)">
         {(f) => <Input id={f.id} readOnly value={total === null ? '—' : formatCurrency(total)} aria-live="polite" />}
       </Field>
       <Field label="Odômetro (km) *" error={errors.odometer?.message}>
-        {(f) => <Input {...form.register('odometer')} id={f.id} inputMode="decimal" aria-invalid={f.invalid} aria-describedby={f.describedBy} />}
+        {(f) => <Input {...withMask(form.register('odometer'), maskKm)} id={f.id} inputMode="decimal" aria-invalid={f.invalid} aria-describedby={f.describedBy} />}
       </Field>
       <Field label="Jornada (opcional)" error={errors.shiftId?.message}>
         {(f) => (

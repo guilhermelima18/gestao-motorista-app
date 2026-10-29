@@ -20,10 +20,13 @@ import { formatDateTime, rangeToIso, type DateRangeValue } from '@/lib/dates'
 export function TripsPage() {
   const [range, setRange] = useState<DateRangeValue>({ from: '', to: '' })
   const [platformId, setPlatformId] = useState('')
-  const [shiftId, setShiftId] = useState('')
+  // null = o usuário ainda não mexeu no filtro; vale a jornada atual (em aberto), se houver.
+  const [shiftChoice, setShiftChoice] = useState<string | null>(null)
   const [editing, setEditing] = useState<Trip | null | undefined>(undefined)
   const platforms = usePlatforms()
   const shifts = useShifts()
+  const currentShift = shifts.data?.find((s) => !s.endedAt)
+  const shiftId = shiftChoice ?? currentShift?.id.toString() ?? ''
 
   const iso = rangeToIso(range)
   const trips = useApiQuery(
@@ -94,7 +97,7 @@ export function TripsPage() {
         </label>
         <label className="flex flex-col gap-1 text-xs font-medium text-muted">
           Jornada
-          <Select value={shiftId} onChange={(e) => setShiftId(e.target.value)}>
+          <Select value={shiftId} onChange={(e) => setShiftChoice(e.target.value)}>
             <option value="">Todas</option>
             {shifts.data?.map((s) => (
               <option key={s.id} value={s.id}>

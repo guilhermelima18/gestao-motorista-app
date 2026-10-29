@@ -7,7 +7,7 @@ import { Field, Input, Select } from '@/components/ui/form-controls'
 import { useFormSubmit } from '@/hooks/useFormSubmit'
 import { api, unwrap } from '@/lib/api'
 import { goalPeriodLabel, todayLocalDate } from '@/lib/dates'
-import { moneyField, schemaResolver } from '@/lib/form'
+import { maskMoney, moneyField, schemaResolver, withMask } from '@/lib/form'
 
 interface GoalFormValues {
   description: string
@@ -83,7 +83,7 @@ export function GoalForm({ goal, onDone, onCancel }: { goal: Goal | null; onDone
         {(f) => <Input {...form.register('referenceDate')} id={f.id} type="date" aria-invalid={f.invalid} aria-describedby={f.describedBy} />}
       </Field>
       <Field label="Valor objetivo (R$) *" error={errors.targetAmount?.message}>
-        {(f) => <Input {...form.register('targetAmount')} id={f.id} inputMode="decimal" placeholder="0,00" aria-invalid={f.invalid} aria-describedby={f.describedBy} />}
+        {(f) => <Input {...withMask(form.register('targetAmount'), maskMoney)} id={f.id} inputMode="numeric" placeholder="R$ 0,00" aria-invalid={f.invalid} aria-describedby={f.describedBy} />}
       </Field>
       <label className="flex items-center gap-2 self-end text-sm">
         <input type="checkbox" {...form.register('active')} /> Meta ativa

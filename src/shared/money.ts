@@ -34,7 +34,12 @@ export function parseCents(text: string): number | null {
 export function parseNumber(text: string): number | null {
   const clean = text.replace(/\s/g, '')
   if (clean === '') return null
-  const normalized = clean.includes(',') ? clean.replace(/\./g, '').replace(',', '.') : clean
+  // Sem vírgula, "123.450" é milhar (como a máscara gera); "7.80" é decimal.
+  const normalized = clean.includes(',')
+    ? clean.replace(/\./g, '').replace(',', '.')
+    : /^\d{1,3}(\.\d{3})+$/.test(clean)
+      ? clean.replace(/\./g, '')
+      : clean
   if (!/^-?\d+(\.\d+)?$/.test(normalized)) return null
   return Number(normalized)
 }
@@ -45,9 +50,9 @@ export function formatCurrency(cents: number): string {
   return currencyFormatter.format(cents / 100)
 }
 
-/** Formato simples para campos de edição: 1250 -> "12,50". */
+/** Valor para campos de edição, no formato da máscara monetária: 123456 -> "R$ 1.234,56". */
 export function centsToText(cents: number): string {
-  return (cents / 100).toFixed(2).replace('.', ',')
+  return formatCurrency(cents)
 }
 
 export function formatNumber(value: number, digits = 1): string {

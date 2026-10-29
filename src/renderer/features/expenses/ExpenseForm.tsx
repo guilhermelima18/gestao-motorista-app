@@ -8,7 +8,7 @@ import { Field, Input, Select, Textarea } from '@/components/ui/form-controls'
 import { useFormSubmit } from '@/hooks/useFormSubmit'
 import { api, unwrap } from '@/lib/api'
 import { futureDateWarning, localInputToIso, nowLocalInput, toLocalInput } from '@/lib/dates'
-import { moneyField, optionalIdField, schemaResolver } from '@/lib/form'
+import { maskMoney, moneyField, optionalIdField, schemaResolver, withMask } from '@/lib/form'
 
 interface ExpenseFormValues {
   description: string
@@ -87,7 +87,7 @@ export function ExpenseForm({
         )}
       </Field>
       <Field label="Valor (R$) *" error={errors.amount?.message}>
-        {(f) => <Input {...form.register('amount')} id={f.id} inputMode="decimal" placeholder="0,00" aria-invalid={f.invalid} aria-describedby={f.describedBy} />}
+        {(f) => <Input {...withMask(form.register('amount'), maskMoney)} id={f.id} inputMode="numeric" placeholder="R$ 0,00" aria-invalid={f.invalid} aria-describedby={f.describedBy} />}
       </Field>
       <Field label="Data *" error={errors.expenseDate?.message} warning={dateWarning}>
         {(f) => <Input type="datetime-local" {...form.register('expenseDate')} id={f.id} aria-invalid={f.invalid} aria-describedby={f.describedBy} />}

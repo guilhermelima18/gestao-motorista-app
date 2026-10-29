@@ -46,6 +46,37 @@ export function schemaResolver<V extends FieldValues>(schema: ZodTypeAny, toInpu
   }
 }
 
+/** Máscara monetária: os dígitos entram como centavos ("123456" -> "R$ 1.234,56"); sem dígitos, campo vazio. */
+export function maskMoney(value: string): string {
+  const digits = value.replace(/\D/g, '')
+  if (digits === '') return ''
+  return (Number(digits) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+
+/** Máscara de quilometragem: só dígitos, com ponto de milhar ("192722" -> "192.722"). */
+export function maskKm(value: string): string {
+  const digits = value.replace(/\D/g, '')
+  if (digits === '') return ''
+  return new Intl.NumberFormat('pt-BR').format(Number(digits))
+}
+
+/** Máscara de distância da viagem: os dígitos entram como centésimos ("868" -> "8,68", "123456" -> "1.234,56"). */
+export function maskDistance(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 9)
+  if (digits === '') return ''
+  return distanceToText(Number(digits) / 100)
+}
+
+/** Distância para campos de edição, já mascarada: 8.68 -> "8,68", 10 -> "10,00". */
+export function distanceToText(km: number): string {
+  return km.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+/** Quilometragem para campos de edição: 192722 -> "192.722". */
+export function kmToText(km: number): string {
+  return km.toLocaleString('pt-BR', { maximumFractionDigits: 2 })
+}
+
 /** Aplica uma máscara de digitação (CPF, celular) a um campo registrado no React Hook Form. */
 export function withMask(registration: UseFormRegisterReturn, mask: (value: string) => string): UseFormRegisterReturn {
   return {

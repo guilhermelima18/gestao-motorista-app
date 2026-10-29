@@ -6,7 +6,7 @@ import { Field, Input, Select, Textarea } from '@/components/ui/form-controls'
 import { useFormSubmit } from '@/hooks/useFormSubmit'
 import { api, unwrap } from '@/lib/api'
 import { futureDateWarning, localInputToIso, nowLocalInput, toLocalInput } from '@/lib/dates'
-import { idField, numberField, schemaResolver } from '@/lib/form'
+import { idField, kmToText, maskKm, numberField, schemaResolver, withMask } from '@/lib/form'
 
 interface StartValues {
   vehicleId: string
@@ -40,7 +40,7 @@ export function StartShiftForm({
     defaultValues: {
       vehicleId: preferred?.id.toString() ?? '',
       startedAt: nowLocalInput(),
-      startOdometer: preferred?.currentOdometer?.toString().replace('.', ',') ?? '',
+      startOdometer: preferred?.currentOdometer != null ? kmToText(preferred.currentOdometer) : '',
       notes: '',
     },
   })
@@ -55,7 +55,7 @@ export function StartShiftForm({
 
   const onVehicleChange = (id: string) => {
     const vehicle = active.find((v) => v.id === Number(id))
-    if (vehicle?.currentOdometer != null) form.setValue('startOdometer', vehicle.currentOdometer.toString().replace('.', ','))
+    if (vehicle?.currentOdometer != null) form.setValue('startOdometer', kmToText(vehicle.currentOdometer))
   }
 
   return (
@@ -81,7 +81,7 @@ export function StartShiftForm({
         {(f) => <Input type="datetime-local" {...form.register('startedAt')} id={f.id} aria-invalid={f.invalid} aria-describedby={f.describedBy} />}
       </Field>
       <Field label="Quilometragem inicial (km) *" error={errors.startOdometer?.message}>
-        {(f) => <Input {...form.register('startOdometer')} id={f.id} inputMode="decimal" aria-invalid={f.invalid} aria-describedby={f.describedBy} autoFocus />}
+        {(f) => <Input {...withMask(form.register('startOdometer'), maskKm)} id={f.id} inputMode="decimal" aria-invalid={f.invalid} aria-describedby={f.describedBy} autoFocus />}
       </Field>
       <Field label="Observações" error={errors.notes?.message} className="sm:col-span-2">
         {(f) => <Textarea {...form.register('notes')} id={f.id} />}
@@ -128,7 +128,7 @@ export function EndShiftForm({ shift, onDone, onCancel }: { shift: Shift; onDone
         {(f) => <Input type="datetime-local" {...form.register('endedAt')} id={f.id} aria-invalid={f.invalid} aria-describedby={f.describedBy} />}
       </Field>
       <Field label="Quilometragem final (km) *" error={errors.endOdometer?.message}>
-        {(f) => <Input {...form.register('endOdometer')} id={f.id} inputMode="decimal" aria-invalid={f.invalid} aria-describedby={f.describedBy} autoFocus />}
+        {(f) => <Input {...withMask(form.register('endOdometer'), maskKm)} id={f.id} inputMode="decimal" aria-invalid={f.invalid} aria-describedby={f.describedBy} autoFocus />}
       </Field>
       <Field label="Observações" error={errors.notes?.message} className="sm:col-span-2">
         {(f) => <Textarea {...form.register('notes')} id={f.id} />}
@@ -148,7 +148,7 @@ interface EditValues {
   notes: string
 }
 
-const toText = (n: number | null) => (n === null ? '' : n.toString().replace('.', ','))
+const toText = (n: number | null) => (n === null ? '' : kmToText(n))
 
 /** Corrige datas, quilometragens e observações; o veículo não pode ser trocado. */
 export function EditShiftForm({ shift, onDone, onCancel }: { shift: Shift; onDone: () => void; onCancel: () => void }) {
@@ -190,7 +190,7 @@ export function EditShiftForm({ shift, onDone, onCancel }: { shift: Shift; onDon
         {(f) => <Input type="datetime-local" {...form.register('startedAt')} id={f.id} aria-invalid={f.invalid} aria-describedby={f.describedBy} />}
       </Field>
       <Field label="Quilometragem inicial (km) *" error={errors.startOdometer?.message}>
-        {(f) => <Input {...form.register('startOdometer')} id={f.id} inputMode="decimal" aria-invalid={f.invalid} aria-describedby={f.describedBy} />}
+        {(f) => <Input {...withMask(form.register('startOdometer'), maskKm)} id={f.id} inputMode="decimal" aria-invalid={f.invalid} aria-describedby={f.describedBy} />}
       </Field>
       {isOpen ? null : (
         <>
@@ -198,7 +198,7 @@ export function EditShiftForm({ shift, onDone, onCancel }: { shift: Shift; onDon
             {(f) => <Input type="datetime-local" {...form.register('endedAt')} id={f.id} aria-invalid={f.invalid} aria-describedby={f.describedBy} />}
           </Field>
           <Field label="Quilometragem final (km) *" error={errors.endOdometer?.message}>
-            {(f) => <Input {...form.register('endOdometer')} id={f.id} inputMode="decimal" aria-invalid={f.invalid} aria-describedby={f.describedBy} />}
+            {(f) => <Input {...withMask(form.register('endOdometer'), maskKm)} id={f.id} inputMode="decimal" aria-invalid={f.invalid} aria-describedby={f.describedBy} />}
           </Field>
         </>
       )}

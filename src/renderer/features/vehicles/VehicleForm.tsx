@@ -6,7 +6,7 @@ import { FormActions } from '@/components/FormActions'
 import { Field, Input, Select } from '@/components/ui/form-controls'
 import { useFormSubmit } from '@/hooks/useFormSubmit'
 import { api, unwrap } from '@/lib/api'
-import { optionalNumberField, schemaResolver } from '@/lib/form'
+import { kmToText, maskKm, optionalNumberField, schemaResolver, withMask } from '@/lib/form'
 
 interface VehicleFormValues {
   name: string
@@ -40,7 +40,7 @@ export function VehicleForm({ vehicle, onDone, onCancel }: { vehicle: Vehicle | 
       year: vehicle?.year?.toString() ?? '',
       plate: vehicle?.plate ?? '',
       mainFuel: vehicle?.mainFuel ?? '',
-      currentOdometer: vehicle?.currentOdometer?.toString().replace('.', ',') ?? '',
+      currentOdometer: vehicle?.currentOdometer != null ? kmToText(vehicle.currentOdometer) : '',
       active: vehicle?.active ?? true,
     },
   })
@@ -85,7 +85,7 @@ export function VehicleForm({ vehicle, onDone, onCancel }: { vehicle: Vehicle | 
         )}
       </Field>
       <Field label="Quilometragem atual (km)" error={errors.currentOdometer?.message}>
-        {(f) => <Input {...form.register('currentOdometer')} id={f.id} inputMode="decimal" aria-invalid={f.invalid} aria-describedby={f.describedBy} />}
+        {(f) => <Input {...withMask(form.register('currentOdometer'), maskKm)} id={f.id} inputMode="decimal" aria-invalid={f.invalid} aria-describedby={f.describedBy} />}
       </Field>
       <label className="flex items-center gap-2 text-sm sm:col-span-2">
         <input type="checkbox" {...form.register('active')} /> Veículo ativo
